@@ -25,7 +25,8 @@ const testFormSchema = z.object({
   title: z.string().min(5, 'Title must be at least 5 characters'),
   subject: z.string().min(1, 'Subject is required'),
   chapter: z.string().optional(),
-  type: z.enum(['chapter_test', 'mock_test', 'board_pattern']),
+  topic: z.string().optional(),
+  type: z.enum(['topic_test', 'chapter_test', 'mock_test', 'board_pattern']),
   difficulty: z.enum(['easy', 'medium', 'hard', 'mixed']),
   duration: z.number().optional(),
   totalMarks: z.number().optional(),
@@ -93,6 +94,7 @@ export default function EditTest() {
   
   // Update subject filter when form subject changes
   const watchSubject = form.watch('subject');
+  const watchChapter = form.watch('chapter');
   
   useEffect(() => {
     if (watchSubject) {
@@ -177,9 +179,9 @@ export default function EditTest() {
     <SelectItem key={chapter.id} value={chapter.id}>{chapter.name}</SelectItem>
   ));
   
-  const topicOptions = watchSubject && filters.chapter && 
+  const topicOptions = watchSubject && watchChapter && 
     SUBJECTS_CHAPTERS[watchSubject]?.chapters
-      .find(c => c.id === filters.chapter)?.topics?.map(topic => (
+      .find(c => c.id === watchChapter)?.topics?.map(topic => (
         <SelectItem key={topic.id} value={topic.id}>{topic.name}</SelectItem>
       ));
   
@@ -427,7 +429,7 @@ export default function EditTest() {
                               value={field.value}
                             >
                               <FormControl>
-                                <SelectTrigger>
+                                <SelectTrigger className="border-gray-300 focus:border-primary/50">
                                   <SelectValue placeholder="Select a subject" />
                                 </SelectTrigger>
                               </FormControl>
@@ -435,7 +437,7 @@ export default function EditTest() {
                                 {subjectOptions}
                               </SelectContent>
                             </Select>
-                            <FormMessage />
+                            <FormMessage className="text-red-500" />
                           </FormItem>
                         )}
                       />
@@ -453,7 +455,7 @@ export default function EditTest() {
                               disabled={!watchSubject}
                             >
                               <FormControl>
-                                <SelectTrigger>
+                                <SelectTrigger className="border-gray-300 focus:border-primary/50">
                                   <SelectValue placeholder="Select a chapter" />
                                 </SelectTrigger>
                               </FormControl>
@@ -461,7 +463,35 @@ export default function EditTest() {
                                 {chapterOptions}
                               </SelectContent>
                             </Select>
-                            <FormMessage />
+                            <FormMessage className="text-red-500" />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                    
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <FormField
+                        control={form.control}
+                        name="topic"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Topic (Optional)</FormLabel>
+                            <Select 
+                              onValueChange={field.onChange} 
+                              defaultValue={field.value}
+                              value={field.value || ''}
+                              disabled={!watchChapter}
+                            >
+                              <FormControl>
+                                <SelectTrigger className="border-gray-300 focus:border-primary/50">
+                                  <SelectValue placeholder="Select a topic" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                {topicOptions}
+                              </SelectContent>
+                            </Select>
+                            <FormMessage className="text-red-500" />
                           </FormItem>
                         )}
                       />
@@ -477,23 +507,47 @@ export default function EditTest() {
                             <RadioGroup
                               onValueChange={field.onChange}
                               value={field.value}
-                              className="flex flex-col space-y-1"
+                              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3"
                             >
-                              <div className="flex items-center space-x-2">
-                                <RadioGroupItem value="chapter_test" id="chapter_test" />
-                                <Label htmlFor="chapter_test">Chapter Test</Label>
+                              <div className={`flex flex-col border rounded-lg p-4 cursor-pointer ${
+                                field.value === "topic_test" ? "border-primary bg-primary/5" : "border-gray-200"
+                              }`}>
+                                <RadioGroupItem value="topic_test" id="topic_test" className="sr-only" />
+                                <Label htmlFor="topic_test" className="flex flex-col h-full cursor-pointer">
+                                  <span className="font-medium mb-1">Topic Test</span>
+                                  <span className="text-xs text-gray-500">Test focused on a specific topic within a chapter</span>
+                                </Label>
                               </div>
-                              <div className="flex items-center space-x-2">
-                                <RadioGroupItem value="mock_test" id="mock_test" />
-                                <Label htmlFor="mock_test">Mock Test</Label>
+                              <div className={`flex flex-col border rounded-lg p-4 cursor-pointer ${
+                                field.value === "chapter_test" ? "border-primary bg-primary/5" : "border-gray-200"
+                              }`}>
+                                <RadioGroupItem value="chapter_test" id="chapter_test" className="sr-only" />
+                                <Label htmlFor="chapter_test" className="flex flex-col h-full cursor-pointer">
+                                  <span className="font-medium mb-1">Chapter Test</span>
+                                  <span className="text-xs text-gray-500">Complete chapter coverage with mixed questions</span>
+                                </Label>
                               </div>
-                              <div className="flex items-center space-x-2">
-                                <RadioGroupItem value="board_pattern" id="board_pattern" />
-                                <Label htmlFor="board_pattern">Board Pattern</Label>
+                              <div className={`flex flex-col border rounded-lg p-4 cursor-pointer ${
+                                field.value === "mock_test" ? "border-primary bg-primary/5" : "border-gray-200"
+                              }`}>
+                                <RadioGroupItem value="mock_test" id="mock_test" className="sr-only" />
+                                <Label htmlFor="mock_test" className="flex flex-col h-full cursor-pointer">
+                                  <span className="font-medium mb-1">Mock Test</span>
+                                  <span className="text-xs text-gray-500">Full subject coverage simulating exam conditions</span>
+                                </Label>
+                              </div>
+                              <div className={`flex flex-col border rounded-lg p-4 cursor-pointer ${
+                                field.value === "board_pattern" ? "border-primary bg-primary/5" : "border-gray-200"
+                              }`}>
+                                <RadioGroupItem value="board_pattern" id="board_pattern" className="sr-only" />
+                                <Label htmlFor="board_pattern" className="flex flex-col h-full cursor-pointer">
+                                  <span className="font-medium mb-1">Board Pattern</span>
+                                  <span className="text-xs text-gray-500">Follows CBSE board exam pattern and distribution</span>
+                                </Label>
                               </div>
                             </RadioGroup>
                           </FormControl>
-                          <FormMessage />
+                          <FormMessage className="text-red-500" />
                         </FormItem>
                       )}
                     />

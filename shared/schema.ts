@@ -70,7 +70,8 @@ export const tests = pgTable("tests", {
   title: text("title").notNull(),
   subject: text("subject").notNull(),
   chapter: text("chapter"),
-  type: text("type", { enum: ["chapter_test", "mock_test", "board_pattern"] }).notNull(),
+  topic: text("topic"),
+  type: text("type", { enum: ["topic_test", "chapter_test", "mock_test", "board_pattern"] }).notNull(),
   difficulty: text("difficulty", { enum: ["easy", "medium", "hard", "mixed"] }).notNull(),
   duration: integer("duration"), // minutes
   totalMarks: integer("total_marks"),
