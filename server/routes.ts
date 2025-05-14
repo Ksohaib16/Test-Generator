@@ -297,14 +297,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/tests', requireTeacher, async (req, res) => {
     try {
-      const testData = insertTestSchema.parse(req.body);
+      console.log('Received test data:', req.body);
       
-      const test = await storage.createTest({
-        ...testData,
-        createdByTeacherId: req.user!.id
-      });
-      
-      res.status(201).json({ test });
+      try {
+        const testData = insertTestSchema.parse(req.body);
+        console.log('Parsed test data:', testData);
+        
+        const test = await storage.createTest({
+          ...testData,
+          createdByTeacherId: req.user!.id
+        });
+        
+        res.status(201).json({ test });
+      } catch (parseError) {
+        if (parseError instanceof z.ZodError) {
+          console.error('Zod validation error:', parseError.errors);
+          return res.status(400).json({ error: 'Invalid test data', details: parseError.errors });
+        }
+        throw parseError;
+      }
     } catch (error) {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: 'Invalid input data', errors: error.errors });

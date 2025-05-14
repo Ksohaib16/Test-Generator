@@ -65,8 +65,9 @@ export function useCreateTest() {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: async (test: Omit<Test, 'id' | 'createdByTeacherId'>) => {
-      const res = await apiRequest('POST', '/api/tests', test);
+    mutationFn: async (testData: any) => {
+      console.log("Mutation sending test data:", testData);
+      const res = await apiRequest('POST', '/api/tests', testData);
       return res.json();
     },
     onSuccess: () => {
@@ -143,8 +144,17 @@ export function useDeleteTest() {
 }
 
 // Get questions by filters
-export function useQuestions(filters: { subject?: string; chapter?: string; topic?: string; difficulty?: string }) {
-  const queryKey = ['/api/questions', filters];
+export function useQuestions(filters: { subject: string; chapter: string; topic: string; difficulty: string }) {
+  // Build query key with only non-empty values
+  const queryParams = new URLSearchParams();
+  
+  if (filters.subject) queryParams.append('subject', filters.subject);
+  if (filters.chapter) queryParams.append('chapter', filters.chapter);
+  if (filters.topic) queryParams.append('topic', filters.topic);
+  if (filters.difficulty) queryParams.append('difficulty', filters.difficulty);
+  
+  const url = `/api/questions?${queryParams.toString()}`;
+  const queryKey = [url];
   
   return useQuery<{ questions: Question[] }>({
     queryKey,

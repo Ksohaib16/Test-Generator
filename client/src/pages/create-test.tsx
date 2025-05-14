@@ -42,7 +42,12 @@ export default function CreateTest() {
   const createTestMutation = useCreateTest();
   const [selectedQuestions, setSelectedQuestions] = useState<Question[]>([]);
   const [currentStep, setCurrentStep] = useState<number>(1);
-  const [filters, setFilters] = useState({
+  const [filters, setFilters] = useState<{
+    subject: string;
+    chapter: string;
+    topic: string;
+    difficulty: string;
+  }>({
     subject: '',
     chapter: '',
     topic: '',
@@ -79,7 +84,7 @@ export default function CreateTest() {
       setFilters({
         ...filters,
         subject: form.getValues('subject'),
-        chapter: form.getValues('chapter'),
+        chapter: form.getValues('chapter') || '',
         topic: form.getValues('topic') || '',
       });
       
@@ -124,20 +129,36 @@ export default function CreateTest() {
         return;
       }
       
-      const testData = {
+      // Strip out any undefined or empty string values
+      const cleanedData = {
         title: data.title,
         subject: data.subject,
-        chapter: data.chapter || undefined,
-        topic: data.topic || undefined,
         type: data.type,
-        difficulty: data.difficulty,
-        duration: data.duration,
-        totalMarks: totalMarks,
+        difficulty: data.difficulty
+      };
+      
+      // Only add optional fields if they're defined and not empty
+      if (data.chapter && data.chapter.trim() !== '') {
+        (cleanedData as any).chapter = data.chapter;
+      }
+      
+      if (data.topic && data.topic.trim() !== '') {
+        (cleanedData as any).topic = data.topic;
+      }
+      
+      if (data.duration) {
+        (cleanedData as any).duration = data.duration;
+      }
+      
+      // Add computed and required values
+      const testData = {
+        ...cleanedData,
+        totalMarks,
         createdByTeacherId: user?.id as number,
         questionsList: selectedQuestions,
       };
       
-      console.log("Sending test data:", testData);
+      console.log("Sending cleaned test data:", testData);
       
       await createTestMutation.mutateAsync(testData);
       
