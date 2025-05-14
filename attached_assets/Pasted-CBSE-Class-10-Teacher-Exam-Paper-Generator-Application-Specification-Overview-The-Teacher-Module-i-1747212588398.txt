@@ -1,0 +1,115 @@
+CBSE Class 10 Teacher Exam Paper Generator – Application Specification
+Overview
+The Teacher Module is a web application for CBSE Class 10 educators to generate structured practice tests, chapter-wise quizzes, mock exams, and full subject papers. Teachers log in (as Teacher role) and select a subject, then drill down to a specific chapter and topic. They set the test type (chapter test, mock test, or board-pattern paper) and difficulty level (Easy/Medium/Hard). The app retrieves or AI-generates relevant questions from an internal question bank (tagged by subject, chapter, topic, difficulty) and displays them for review. Teachers can customize the question set (add/remove/edit questions, reorder, set instructions/marks) before saving. After creation, a test can be exported as a formatted PDF (with optional answer key) or assigned digitally to students in the same institution. The app supports role-based access: teachers and students each have their own dashboards, and teachers approve student connection requests during onboarding. A clean, responsive UI (built with Next.js and Tailwind CSS) guides teachers through all flows. The backend (NestJS with MongoDB) provides RESTful APIs (protected by JWT auth) that will also be re-used by a future mobile app.
+Features
+Authentication & Roles
+User Registration & Login: Both teachers and students create accounts. Teachers register with their school or coaching institute name and basic details; students register with name, class/roll no., and must request to join a teacher’s organization during signup.
+Organization & Approval Flow: Each teacher creates or is affiliated with an Institution record (school/coaching name). After student signup, a join request is sent to the teacher. The teacher reviews pending requests in their dashboard and can approve or reject each student. Approved students are linked to the teacher’s organization (via a Student–Teacher link or membership table).
+Role-Based Access: The system enforces roles (Teacher or Student) using JWT-based authentication. Upon login, a JWT is issued and must be included in subsequent API calls
+docs.nestjs.com
+. Teachers and students see different dashboards. Protected endpoints verify roles (e.g. only teachers can create tests) using Passport.js JWT strategy or NestJS guards (see NestJS documentation
+docs.nestjs.com
+).
+Teacher Dashboard
+Overview Panel: Upon login, teachers see a summary dashboard with quick stats: number of connected students, total tests created, number of tests exported/assigned, etc. This can be implemented with UI cards (Material Design 3 cards or similar) showing counts and actions.
+Actions & Navigation: Clear buttons or links allow teachers to Create New Test, View All Tests, and Manage Profile/Settings. There should be a list or table of recent tests (showing test name, subject, date created, type) with action icons (Edit, Delete, Duplicate, Download PDF). For example, action icons can use Material icons (Edit, Delete, FileCopy, Download).
+Notifications: If desired, include a section or dropdown for notifications (e.g. new student join requests to approve).
+Test Generation Flow
+Choose Test Type: Teacher selects one of: Chapter Test, Mock Test, or Board Pattern Paper. Each type may have different default settings (e.g., a Board Pattern Paper follows official CBSE format).
+Select Subject/Chapter/Topic: Teacher picks a Subject (e.g., Mathematics, Science) from a dropdown. Then selects a Chapter from that subject, and (optionally) specific topics within the chapter. This can be a nested dropdown or step wizard.
+Set Difficulty: Teacher chooses difficulty level – typically Easy, Medium, Hard. This will filter or weight questions from the question bank.
+Generate Questions: The app queries the internal MongoDB question bank by tags (subject, chapter, topics, difficulty) and presents an initial set of questions. Optionally, an AI or template engine could auto-generate or rank questions. The UI displays all fetched questions (with question text, options for MCQs, blanks for short answers, etc).
+Customize Test: The teacher reviews and edits the questions:
+Add/Remove Questions: Buttons allow adding custom questions (e.g. a “+ Add Question” at the bottom) or deleting unwanted ones.
+Edit Questions: Each question can be edited inline or via a modal (change question text, options, correct answer, etc).
+Reorder: Drag-and-drop or up/down arrows let the teacher reorder questions.
+Instructions & Marks: The teacher can add an instruction or heading for the section, and set marks or weight per question or section (e.g. 1 mark each, or as needed).
+Save Test: The teacher gives the test a name and saves it. The test is stored in the “Tests” collection (with fields: testId, title, subject, chapter, type, dateCreated, questionList, createdByTeacherId, etc).
+Choose Post-Save Action: After saving, the teacher can either:
+Export as PDF: Opens a PDF preview panel and download button. The test is formatted into a printable layout (with school header, instructions, questions, and optional answer key). A PDF is generated server-side (see PDF Export below).
+Assign to Students: Opens a modal to select one or more students from their approved list. The teacher assigns the test; it creates entries in an “AssignedTests” collection linking testId to studentId(s), with status “assigned.” Assigned students will see the test in their (future) student dashboard.
+PDF Export
+Layout: The PDF should have a clean, professional layout suitable for printing. Include the school/logo header, test title, instructions (if any), date, and structured question sections. Use consistent fonts and spacing.
+Answer Key: Provide an option (checkbox) to include the answer key at the end, or leave the PDF without answers. If answers are included, they can be appended in a separate section.
+Preview & Download: The UI shows a live preview of the PDF next to a “Download PDF” button. When clicked, the browser downloads the PDF file. (Server generates PDF on demand.)
+Implementation: On the backend, use a library like Puppeteer or PDFMake to generate the PDF. For example, Puppeteer (a Node.js library) can render an HTML/CSS page in headless Chrome and export to PDF
+medium.com
+. Alternatively, PDFMake can build PDF from JSON definitions. PDFMake is designed for Node.js and integrates seamlessly with Nest.js
+pdfbolt.com
+pdfbolt.com
+. Both approaches produce print-ready PDFs on the server.
+Assign to Students
+Selection: In the “Assign Test” modal, the teacher sees a checklist of their connected students (name, email or roll no.). They select one or multiple students.
+Notification: Once assigned, students get the test listed under their “Assigned Tests” (future dashboard). (Optionally, send an email/notification.)
+Grading: The teacher can later enter marks for each student manually. Create an interface in the Teacher Dashboard (or under Test details) to view all students who were assigned a test and input their scores. This data updates the AssignedTests records with scores.
+Future Online Delivery: (Future enhancement) Students will be able to take the test online within the system; auto-graded for objective questions and submitted for teacher grading for subjective ones. For now, assignment is mainly for record-keeping.
+Test Library
+List View: A page listing all tests created by the teacher, sortable/filterable by date, subject, or type. Each row shows Test Title, Date Created, Subject, Type (Chapter/Mock/Board).
+Actions: For each test there are icons/buttons to Edit (re-open the test editor), Duplicate (create a copy with new name), Delete, Download PDF, and Assign. Hover tooltips explain each icon.
+Search/Filter: Optionally, include a search box or filters (e.g. by subject or chapter) to find past tests.
+Profile & Settings
+Profile: The teacher can update name, email, and their affiliated institution (view only or editable if needed). Also provide an interface to manage their organization (if multi-teacher scenario).
+Preferences: Options for default test language (English or Hindi) and theme (light/dark mode toggle). These preferences are saved per user.
+Logout: A clear logout button. After logout, JWT token is cleared and the user is redirected to the login page.
+Technology Stack
+Frontend (Teacher Web App)
+Framework: Next.js with React and TypeScript. Next.js is a React framework for building high-quality web apps
+nextjs.org
+. It provides server-side rendering or hybrid rendering (useful for SEO and performance) and built-in routing (App Router).
+UI & Styling: Tailwind CSS for utility-first styling
+geeksforgeeks.org
+, combined with a Material Design 3 component library. Tailwind simplifies rapid UI development with pre-designed utility classes
+geeksforgeeks.org
+, and Material Design 3 (Material You) guidelines ensure a modern look. For example, use Material UI components (or custom components) for cards, dialogs, forms, toggles. Next.js supports Tailwind out of the box
+nextjs.org
+.
+State Management: Use Zustand or React Context for app-wide state (authentication state, user info, selections). Zustand is a small, fast and scalable state-management solution using React hooks
+github.com
+. It provides a simple API for global state without boilerplate. Context API can also be used for simpler state (like theme and user).
+Routing: Next.js App Router (file-based routing) for pages (e.g., /login, /dashboard, /tests/new, /tests/[id]). Dynamic routes for editing specific tests.
+Authentication: JWT-based login. On login, the frontend stores the JWT (e.g. in an HTTP-only cookie or local storage) and includes it on API requests. Protected pages/components check user role and redirect if unauthorized. Could also integrate NextAuth or custom JWT logic.
+Build & Deployment: Hosted on Vercel (Free Tier). Vercel natively supports Next.js apps, provides automatic SSL and edge caching. Static assets (images, icons) can be served from Vercel’s CDN.
+Backend (API Server)
+Framework: NestJS (Node.js, TypeScript). NestJS is a progressive Node.js framework for building efficient, scalable server-side applications
+docs.nestjs.com
+. It follows a modular, decorator-based architecture (similar to Angular) that organizes code into modules, controllers, and providers.
+REST API: Expose RESTful endpoints (e.g. /auth/login, /auth/register, /tests, /questions, /assignments, etc.). Controllers handle HTTP routes, Services contain business logic, and Modules organize features. This ensures a clear structure for future mobile app reuse.
+Authentication: Use Passport.js strategies with JWT. NestJS has integration for Passport.js; configure PassportModule and JwtModule in the Auth module. On login, the server validates credentials and issues a JWT (JwtService.sign() with a secret). Secured routes use a JwtAuthGuard to enforce authentication. (NestJS docs describe issuing JWT bearer tokens for stateless auth
+docs.nestjs.com
+.)
+Validation: Use class-validator and Nest’s ValidationPipe to validate request DTOs. For example, decorate request DTO classes with validation decorators (@IsEmail(), @Length(), etc). NestJS can automatically validate incoming data using the powerful class-validator package.
+PDF Generation: Implement a service to generate PDFs. Options include:
+Puppeteer: Launch a headless Chromium, render an HTML template of the test, and page.pdf() to generate a PDF
+medium.com
+. This leverages web technologies for styling.
+PDFMake: Programmatically create the PDF content via JSON definitions. PDFMake works well in Node.js (no native dependencies) and even has examples using Nest.js integration
+pdfbolt.com
+pdfbolt.com
+. It offers fine-grained control (headers, footers, tables). Either approach can produce high-quality, printable PDFs.
+Data Query (Questions): The backend queries the MongoDB question bank collection by tags (subject, chapter, topic, difficulty) to fetch candidate questions. These can be combined with any AI or ranking logic if needed. The service returns questions to the frontend for editing.
+Deployment: Host on a cloud Node.js platform (e.g. Railway, Render Free Tier, or even a small AWS/GCP instance). Ensure HTTPS and proper env var management (e.g. MongoDB URI, JWT secret). Use CI/CD from your Git repo to auto-deploy on push.
+Database (MongoDB)
+MongoDB Atlas: Use a free-tier MongoDB Atlas cluster. MongoDB is a document-oriented NoSQL database, ideal for storing flexible data like questions and tests. Each record is a JSON-like document.
+Collections:
+Users: Stores user accounts (fields: _id, name, email, passwordHash, role = “teacher” or “student”, defaultLanguage, theme, institutionId, etc). Use a discriminator or separate logic to distinguish teacher vs student accounts.
+Institutions: Stores organizations/schools (fields: _id, name, address, etc). Teachers belong to an institution; multiple teachers could share one.
+StudentTeacherLinks: (or embedded in User) Tracks which students are approved under which teacher (fields: teacherId, studentId, status). Alternatively, store teacherId and studentList in Institution or teacher doc.
+Questions: The question bank (fields: _id, subject, chapter, topic, difficulty, type [MCQ/SA], questionText, options[], answer, explanation, createdBy (maybe), tags). Index on subject/chapter for fast querying. Seed this DB with an initial set of sample questions.
+Tests: Saved tests/templates (fields: _id, title, subject, chapter, type, difficulty, questionList [sub-docs or IDs], instructions, marksPerQuestion, createdByTeacherId, dateCreated).
+AssignedTests: Links tests to students (fields: _id, testId, studentId, assignedDate, status, scores, submittedAt). Allows tracking assignment and scores.
+(Optional) Settings/Preferences: Could store global or per-org settings (e.g., default test formats).
+Additional Notes
+API-First Design: All frontend features correspond to backend API endpoints. For example, POST /auth/register, POST /auth/login, GET /teachers/:id/requests, POST /tests, PUT /tests/:id, POST /assignments, etc. This ensures the same APIs can be used by a mobile app later.
+Security: Secure passwords (bcrypt hashing), use HTTPS, protect routes with JWT guards, and validate inputs. Rate-limit login attempts to mitigate brute force.
+Future Enhancements: The architecture should allow adding features like online test-taking for students (with automatic grading for objective questions), analytics (performance reports, leaderboards), and more customization of question difficulty. These can be built on the existing REST API and data models.
+UX Considerations: Keep the UI clean and minimal. Guide teachers through creation with clear labels (e.g. “Step 1: Select Chapter” → “Step 2: Generate Questions” → “Step 3: Review & Save”). Use responsive design so teachers on tablets/small laptops can use the app.
+Internationalization: Although primarily for English/Hindi (as per default language setting), design the UI to allow text strings to be easily translated if needed.
+Logging & Monitoring: Include basic logging (server logs, analytics) for debugging and future improvements.
+Tech Stack Summary: Frontend with Next.js + TypeScript + Tailwind CSS (Material Design 3), state via Zustand
+github.com
+; Backend with NestJS + TypeScript + MongoDB Atlas, JWT auth via Passport/Nest guards
+docs.nestjs.com
+; PDF generation via Puppeteer or PDFMake
+medium.com
+pdfbolt.com
+; Hosted on Vercel (frontend) and Railway/Render (backend) on free tiers. This stack ensures scalability and reuse for mobile clients while providing a modern, fast UI.
