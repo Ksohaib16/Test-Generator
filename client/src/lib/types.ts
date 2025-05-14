@@ -47,7 +47,8 @@ export interface Test {
   title: string;
   subject: string;
   chapter?: string;
-  type: 'chapter_test' | 'mock_test' | 'board_pattern';
+  topic?: string;
+  type: 'topic_test' | 'chapter_test' | 'mock_test' | 'board_pattern';
   difficulty: Difficulty;
   duration?: number;
   totalMarks?: number;
