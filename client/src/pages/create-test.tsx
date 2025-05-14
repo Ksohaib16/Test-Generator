@@ -104,13 +104,31 @@ export default function CreateTest() {
     }
     
     try {
+      console.log("Submitting form with data:", data);
       const totalMarks = selectedQuestions.reduce((sum, q) => sum + q.marks, 0);
+      
+      // Ensure all required fields are present and valid
+      if (!data.title || !data.subject || !data.type || !data.difficulty) {
+        console.error("Missing required fields:", { 
+          hasTitle: !!data.title, 
+          hasSubject: !!data.subject, 
+          hasType: !!data.type, 
+          hasDifficulty: !!data.difficulty 
+        });
+        
+        toast({
+          title: 'Missing information',
+          description: 'Please fill in all required fields',
+          variant: 'destructive',
+        });
+        return;
+      }
       
       const testData = {
         title: data.title,
         subject: data.subject,
-        chapter: data.chapter,
-        topic: data.topic,
+        chapter: data.chapter || undefined,
+        topic: data.topic || undefined,
         type: data.type,
         difficulty: data.difficulty,
         duration: data.duration,
@@ -119,7 +137,9 @@ export default function CreateTest() {
         questionsList: selectedQuestions,
       };
       
-      await createTestMutation.mutateAsync(testData as any);
+      console.log("Sending test data:", testData);
+      
+      await createTestMutation.mutateAsync(testData);
       
       toast({
         title: 'Test created',
@@ -148,7 +168,7 @@ export default function CreateTest() {
   const handleFilterChange = (key: string, value: string) => {
     setFilters({
       ...filters,
-      [key]: value,
+      [key]: value === 'any' ? '' : value,
     });
   };
   
@@ -549,7 +569,7 @@ export default function CreateTest() {
                           <SelectValue placeholder="Select difficulty" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="">Any Difficulty</SelectItem>
+                          <SelectItem value="any">Any Difficulty</SelectItem>
                           <SelectItem value="easy">Easy</SelectItem>
                           <SelectItem value="medium">Medium</SelectItem>
                           <SelectItem value="hard">Hard</SelectItem>
